@@ -5,7 +5,7 @@ const express = require("express");
 
 const BOT_NAME = "GURGAJE MD";
 const PREFIX = ".";
-const OWNER_NUMBER = "923130060527"; // <-- aapka number
+const OWNER_NUMBER = "923130060527";
 
 const app = express();
 app.get("/", (req, res) => res.send(`${BOT_NAME} is running ✅`));
@@ -18,21 +18,20 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     logger: pino({ level: "silent" }),
     browser: [BOT_NAME, "Chrome", "1.0.0"]
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  // ===== PAIRING CODE =====
-  if (!sock.authState.creds.registered) {
+  // Pairing code (safe version)
+  if (!sock.authState.creds.registered && typeof sock.requestPairingCode === "function") {
     setTimeout(async () => {
       try {
         const code = await sock.requestPairingCode(OWNER_NUMBER);
         console.log(`\n\n🔑 PAIRING CODE: ${code}\n`);
-        console.log(`📱 WhatsApp → Settings → Linked Devices → Link with phone number`);
-        console.log(`📞 Number: ${OWNER_NUMBER}\n\n`);
+        console.log(`📱 WhatsApp → Linked Devices → Link with phone number\n\n`);
       } catch (err) {
         console.log("Pairing code error:", err.message);
       }
