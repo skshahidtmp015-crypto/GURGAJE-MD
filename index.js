@@ -1,12 +1,11 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 const { Boom } = require("@hapi/boom");
 const pino = require("pino");
-const qrcode = require("qrcode-terminal");
 const express = require("express");
 
 const BOT_NAME = "GURGAJE MD";
 const PREFIX = ".";
-const OWNER_NUMBER = "923130060527"; // <-- apna number yahan dalein
+const OWNER_NUMBER = "923130060527"; // <-- aapka number
 
 const app = express();
 app.get("/", (req, res) => res.send(`${BOT_NAME} is running ✅`));
@@ -19,19 +18,29 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: true,
+    printQRInTerminal: false,
     logger: pino({ level: "silent" }),
     browser: [BOT_NAME, "Chrome", "1.0.0"]
   });
 
   sock.ev.on("creds.update", saveCreds);
 
+  // ===== PAIRING CODE =====
+  if (!sock.authState.creds.registered) {
+    setTimeout(async () => {
+      try {
+        const code = await sock.requestPairingCode(OWNER_NUMBER);
+        console.log(`\n\n🔑 PAIRING CODE: ${code}\n`);
+        console.log(`📱 WhatsApp → Settings → Linked Devices → Link with phone number`);
+        console.log(`📞 Number: ${OWNER_NUMBER}\n\n`);
+      } catch (err) {
+        console.log("Pairing code error:", err.message);
+      }
+    }, 3000);
+  }
+
   sock.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect, qr } = update;
-    if (qr) {
-      console.log("📱 QR Code scan karein:");
-      qrcode.generate(qr, { small: true });
-    }
+    const { connection, lastDisconnect } = update;
     if (connection === "close") {
       const shouldReconnect = new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
       if (shouldReconnect) startBot();
