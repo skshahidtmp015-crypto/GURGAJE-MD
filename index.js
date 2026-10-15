@@ -13,7 +13,7 @@ app.get("/", (req, res) => res.send(`${BOT_NAME} is running ✅`));
 app.listen(process.env.PORT || 3000, () => console.log(`${BOT_NAME} server started`));
 
 async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+  const { state, saveCreds } = await useMultiFileAuthState("/tmp/auth_info");
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
